@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <title>AI Pollution Estimator</title>
+
+        <link rel="stylesheet" href="{{ url_for('static', filename='style/style.css') }}">
+    </head>
+
+    <body>
+        <h1>AI Pollution Estimator</h1>
+
+        <textarea id="prompt" placeholder="Enter your prompt"></textarea>
+
+        <button onclick="sendPrompt()">Analyze</button>
+
+        <div id="result"></div>
+
+        <script src="{{ url_for('static', filename='script/script.js') }}"></script>
+    </body>
+</html>
