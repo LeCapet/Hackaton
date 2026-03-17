@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Chat Énergétique</title>
+<style>
+body {
+    margin:0;
+    font-family:'Segoe UI', sans-serif;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.chat-container {
+    width:800px;
+    height:650px;
+    background:#1e1e2f;
+    border-radius:20px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    box-shadow:0 20px 40px rgba(0,0,0,0.4);
+}
+
+.header {
+    padding:15px;
+    background:#2c2c3e;
+    color:white;
+    text-align:center;
+    font-weight:bold;
+    font-size:1.2em;
+}
+
+.chat-box {
+    flex:1;
+    padding:15px;
+    overflow-y:auto;
+    background:#292945;
+}
+
+.message {
+    margin:10px 0;
+    padding:10px 15px;
+    border-radius:15px;
+    max-width:70%;
+    word-wrap:break-word;
+}
+
+.user { background:#4facfe; color:white; margin-left:auto; }
+.bot { background:#43e97b; color:black; margin-right:auto; }
+
+.input-area {
+    padding:10px;
+    background:#2c2c3e;
+    display:flex;
+    flex-direction:column;
+}
+
+.input-row { display:flex; }
+input[type="text"] {
+    flex:1;
+    padding:10px;
+    border-radius:10px;
+    border:none;
+    outline:none;
+}
+button {
+    margin-left:5px;
+    padding:10px;
+    border:none;
+    border-radius:10px;
+    background:#667eea;
+    color:white;
+    cursor:pointer;
+}
+
+.file-input { margin-top:5px; color:white; }
+.file-preview { font-size:12px; color:#ccc; margin-top:5px; }
+
+/* Pop-up énergie */
+.energy-popup {
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:rgba(30,30,47,0.95);
+    color:white;
+    padding:15px 20px;
+    border-radius:15px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    font-size:14px;
+    max-width:250px;
+    z-index:1000;
+    line-height:1.4em;
+    display:none; /* caché par défaut */
+}
+.energy-popup b { color:#ffd700; }
+</style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="header">⚡ Chat Énergétique</div>
+    <div id="chat" class="chat-box"></div>
+    <div class="input-area">
+        <div class="input-row">
+            <input type="text" id="message" placeholder="Tape ton message...">
+            <button onclick="sendMessage()">Envoyer</button>
+        </div>
+        <input type="file" id="file" class="file-input" multiple>
+        <div id="filePreview" class="file-preview"></div>
+    </div>
+</div>
+
+<!-- Fenêtre pop-up énergie -->
+<div id="energyPopup" class="energy-popup"></div>
+
+<script>
+const fileInput = document.getElementById("file");
+const preview = document.getElementById("filePreview");
+const energyPopup = document.getElementById("energyPopup");
+
+fileInput.addEventListener("change", () => {
+    if(fileInput.files.length > 0){
+        let names = Array.from(fileInput.files).map(f => f.name).join(", ");
+        preview.innerText = "Fichiers: " + names;
+    } else preview.innerText = "";
+});
+
+function sendMessage(){
+    let input = document.getElementById("message");
+    let msg = input.value.trim();
+    let chat = document.getElementById("chat");
+    if(msg=="" && fileInput.files.length==0) return;
+
+    chat.innerHTML += `<div class='message user'>${msg||'[Fichiers envoyés]'}</div>`;
+
+    let formData = new FormData();
+    formData.append("message", msg);
+    for(let i=0; i<fileInput.files.length; i++){ 
+        formData.append("files[]", fileInput.files[i]); 
+    }
+
+    fetch("chat.php", { method:"POST", body: formData })
+    .then(res => res.json())
+    .then(data => {
+        chat.innerHTML += `<div class='message bot'>Réponse reçue</div>`;
+        chat.scrollTop = chat.scrollHeight;
+        showEnergy(data);
+    });
+
+    input.value = ""; 
+    fileInput.value = ""; 
+    preview.innerText = "";
+}
+
+function showEnergy(data){
+    if(data.error){
+        energyPopup.style.display="block";
+        energyPopup.innerHTML = `<b>Erreur:</b> ${data.error}`;
+        return;
+    }
+
+    let html = `<b>Caractères:</b> ${data.text.characters}<br>`;
+    html += `<b>Énergie texte:</b> ${data.text.energy_j} J<br>`;
+    html += `<b>Énergie fichiers:</b> ${data.summary.files_energy_j} J<br>`;
+    html += `<b>Énergie totale:</b> ${data.summary.total_energy_j} J`;
+
+    energyPopup.innerHTML = html;
+    energyPopup.style.display = "block";
+}
+</script>
+</body>
+</html>
