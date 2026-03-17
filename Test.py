@@ -35,25 +35,31 @@ def calculer_impact_flash(taille_mo, nb_tokens, techno, coeff_ia):
     return e_reseau, e_ia
 
 def calculer_conso_a_vide(cpu_cores, ram_gb, stockage_to, type_stockage):
-    p_base_systeme = 40.0 
+    # Base fixe : Carte mère + ventilateurs en mode repos
+    p_carte_mere_idle = 20.0 
     p_cpu_idle = cpu_cores * 0.8
     p_ram_idle = (ram_gb / 32) * 2.0
     conso_disque_base = 5.0 if type_stockage == "SSD NVMe (Performant)" else 8.0
     p_stockage_idle = stockage_to * conso_disque_base
-    return p_base_systeme + p_cpu_idle + p_ram_idle + p_stockage_idle
+    return p_carte_mere_idle + p_cpu_idle + p_ram_idle + p_stockage_idle
 
 def estimer_conso_composants(gpu, cpu_cores, ram_gb, stockage_to, type_stockage):
+    # Base fixe : Carte mère haute performance + contrôleurs + ventilation active
+    p_carte_mere_active = 50.0 
+    
     gpu_power_map = {
         "Standard (RTX 3060 - 12Go)": 150,
         "Recommandé (RTX 3080 - 24Go)": 320,
         "Haute Performance (A100)": 400
     }
     conso_w_par_to = 6.0 if type_stockage == "SSD NVMe (Performant)" else 12.0
+    
     p_gpu = gpu_power_map[gpu]
     p_cpu = cpu_cores * 4  
     p_ram = (ram_gb / 32) * 5 
     p_stockage = stockage_to * conso_w_par_to
-    return p_gpu + p_cpu + p_ram + p_stockage
+    
+    return p_carte_mere_active + p_gpu + p_cpu + p_ram + p_stockage
 
 def calculer_projection(puissance_w, duree_label):
     heures_map = {"1 Jour": 24, "1 Semaine": 168, "1 Mois": 720, "6 Mois": 4320, "1 An": 8760}
@@ -61,7 +67,8 @@ def calculer_projection(puissance_w, duree_label):
     wh = puissance_w * heures
     kwh = wh / 1000
     co2_kg = kwh * 0.052 
-    return wh, co2_kg
+    cout_euro = kwh * 0.20
+    return wh, co2_kg, cout_euro
 
 # --- INTERFACE SIDEBAR ---
 st.sidebar.header("Configuration Serveur (Appel d'Offre)")
@@ -75,7 +82,7 @@ coeff_ia_actuel = coeffs_gpu[option_gpu]
 
 cpu_choice = st.sidebar.select_slider("Nombre de cœurs CPU", options=[8, 16, 32], value=16)
 ram_choice = st.sidebar.radio("Mémoire vive (RAM)", [32, 64], format_func=lambda x: f"{x} Go")
-type_stockage_choice = st.sidebar.radio("Type de stockage", ("SSD NVMe (Performant)", "Disque dur (Scalable)"))
+type_stockage_choice = st.sidebar.radio("Type de stockage", ("SSD NVMe (Performant)", "Disque dur (évolutif)"))
 stockage_choice = st.sidebar.slider("Volume de stockage (To)", 1, 10, 2)
 
 st.sidebar.markdown("---")
@@ -118,7 +125,6 @@ if uploaded_file is not None:
         total_flash_wh = conso_pc_wh + e_net + e_ia
         co2_flash_g = total_flash_wh * 0.052
 
-        # ON SAUVEGARDE DANS LA MÉMOIRE
         st.session_state.flash_res = {
             "total_wh": total_flash_wh,
             "co2_g": co2_flash_g,
@@ -130,42 +136,44 @@ if uploaded_file is not None:
             "net_type": techno_actuelle
         }
 
-# --- AFFICHAGE DES RÉSULTATS FLASH (S'ILS EXISTENT EN MÉMOIRE) ---
 if st.session_state.flash_res:
     res = st.session_state.flash_res
     st.markdown("## Résultats de l'analyse")
     col_res1, col_res2, col_res3 = st.columns(3)
     col_res1.metric("Énergie Totale", f"{res['total_wh']:.4f} Wh")
-    col_res2.metric("Impact Carbone", f"{res['co2_g']:.4f} gCO2e")
+    col_res2.metric("Équivalent carbone", f"{res['co2_g']:.4f} gCO2e")
     col_res3.metric("Tokens IA", res['tokens'])
 
     with st.expander("🔍 Voir le détail par poste de consommation"):
-        st.write(f"- Consommation locale (votre PC) : {res['pc_wh']:.6f} Wh")
-        st.write(f"- Impact réseau ({res['net_type']}) : {res['net_wh']:.6f} Wh")
-        st.write(f"- Impact serveur IA ({res['gpu']}) : {res['ia_wh']:.6f} Wh")
-
-    st.success("Cette mesure permet de répondre aux critères de transition écologique de l'OPCO ATLAS.")
+        st.write(f"- Consommation locale : {res['pc_wh']:.6f} Wh")
+        st.write(f"- Impact réseau : {res['net_wh']:.6f} Wh")
+        st.write(f"- Impact serveur IA : {res['ia_wh']:.6f} Wh")
+    st.success("Cette mesure inclut désormais la consommation structurelle de la carte mère.")
 
 st.markdown("---")
 
-# --- 2. PROJECTION EN ACTIVITÉ ---
+# --- 2. PROJECTION EN ACTIVITÉ (4 COLONNES) ---
 puissance_active_w = estimer_conso_composants(option_gpu, cpu_choice, ram_choice, stockage_choice, type_stockage_choice)
-energie_active_wh, co2_active_kg = calculer_projection(puissance_active_w, duree_projection)
+energie_active_wh, co2_active_kg, cout_active = calculer_projection(puissance_active_w, duree_projection)
 
 st.subheader(f"Projection de consommation en activité sur : {duree_projection}")
-c1, c2, c3 = st.columns(3)
-c1.metric("Puissance Active", f"{puissance_active_w:.1f} W")
-c2.metric("Énergie Cumulée", f"{energie_active_wh/1000:.2f} kWh")
-c3.metric("Impact Carbone", f"{co2_active_kg:.2f} kg CO2e")
+a1, a2, a3, a4 = st.columns(4)
+a1.metric("Puissance", f"{puissance_active_w:.1f} W")
+a2.metric("Énergie", f"{energie_active_wh/1000:.2f} kWh")
+a3.metric("Équivalent carbone", f"{co2_active_kg:.2f} kg CO2e")
+a4.metric("Prix", f"{cout_active:.2f} €")
 
 st.markdown("---")
 
-# --- 3. CONSOMMATION À VIDE (IDLE) ---
+# --- 3. CONSOMMATION À VIDE / IDLE (4 COLONNES) ---
 puissance_idle_w = calculer_conso_a_vide(cpu_choice, ram_choice, stockage_choice, type_stockage_choice)
-energie_idle_wh, co2_idle_kg = calculer_projection(puissance_idle_w, duree_projection)
+energie_idle_wh, co2_idle_kg, cout_idle = calculer_projection(puissance_idle_w, duree_projection)
 
 st.subheader(f"Analyse de la consommation à vide sur : {duree_projection}")
-cv1, cv2, cv3 = st.columns(3)
-cv1.metric("Puissance Idle", f"{puissance_idle_w:.1f} W")
-cv2.metric("Énergie Gaspillée", f"{energie_idle_wh/1000:.2f} kWh")
-cv3.metric("Impact Passif", f"{co2_idle_kg:.3f} kg CO2e")
+v1, v2, v3, v4 = st.columns(4)
+v1.metric("Puissance", f"{puissance_idle_w:.1f} W")
+v2.metric("Énergie", f"{energie_idle_wh/1000:.2f} kWh")
+v3.metric("Équivalent carbone", f"{co2_idle_kg:.3f} kg CO2e")
+v4.metric("Prix", f"{cout_idle:.2f} €")
+
+st.info(f"Note : Coût calculé à 0.20€ / kWh. La puissance inclut la carte mère et le système de refroidissement.")

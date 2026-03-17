@@ -61,7 +61,8 @@ def calculer_projection(puissance_w, duree_label):
     wh = puissance_w * heures
     kwh = wh / 1000
     co2_kg = kwh * 0.052 
-    return wh, co2_kg
+    cout_euro = kwh * 0.20
+    return wh, co2_kg, cout_euro
 
 # --- INTERFACE SIDEBAR ---
 st.sidebar.header("Configuration Serveur (Appel d'Offre)")
@@ -118,7 +119,6 @@ if uploaded_file is not None:
         total_flash_wh = conso_pc_wh + e_net + e_ia
         co2_flash_g = total_flash_wh * 0.052
 
-        # ON SAUVEGARDE DANS LA MÉMOIRE
         st.session_state.flash_res = {
             "total_wh": total_flash_wh,
             "co2_g": co2_flash_g,
@@ -130,42 +130,44 @@ if uploaded_file is not None:
             "net_type": techno_actuelle
         }
 
-# --- AFFICHAGE DES RÉSULTATS FLASH (S'ILS EXISTENT EN MÉMOIRE) ---
 if st.session_state.flash_res:
     res = st.session_state.flash_res
     st.markdown("## Résultats de l'analyse")
     col_res1, col_res2, col_res3 = st.columns(3)
     col_res1.metric("Énergie Totale", f"{res['total_wh']:.4f} Wh")
-    col_res2.metric("Impact Carbone", f"{res['co2_g']:.4f} gCO2e")
+    col_res2.metric("Équivalent carbone", f"{res['co2_g']:.4f} gCO2e")
     col_res3.metric("Tokens IA", res['tokens'])
 
     with st.expander("🔍 Voir le détail par poste de consommation"):
-        st.write(f"- Consommation locale (votre PC) : {res['pc_wh']:.6f} Wh")
-        st.write(f"- Impact réseau ({res['net_type']}) : {res['net_wh']:.6f} Wh")
-        st.write(f"- Impact serveur IA ({res['gpu']}) : {res['ia_wh']:.6f} Wh")
-
+        st.write(f"- Consommation locale : {res['pc_wh']:.6f} Wh")
+        st.write(f"- Impact réseau : {res['net_wh']:.6f} Wh")
+        st.write(f"- Impact serveur IA : {res['ia_wh']:.6f} Wh")
     st.success("Cette mesure permet de répondre aux critères de transition écologique de l'OPCO ATLAS.")
 
 st.markdown("---")
 
-# --- 2. PROJECTION EN ACTIVITÉ ---
+# --- 2. PROJECTION EN ACTIVITÉ (4 COLONNES) ---
 puissance_active_w = estimer_conso_composants(option_gpu, cpu_choice, ram_choice, stockage_choice, type_stockage_choice)
-energie_active_wh, co2_active_kg = calculer_projection(puissance_active_w, duree_projection)
+energie_active_wh, co2_active_kg, cout_active = calculer_projection(puissance_active_w, duree_projection)
 
-st.subheader(f"Projection de consommation en activité sur : {duree_projection}")
-c1, c2, c3 = st.columns(3)
-c1.metric("Puissance Active", f"{puissance_active_w:.1f} W")
-c2.metric("Énergie Cumulée", f"{energie_active_wh/1000:.2f} kWh")
-c3.metric("Impact Carbone", f"{co2_active_kg:.2f} kg CO2e")
+st.subheader(f"Projection de consommation au maximum sur : {duree_projection}")
+a1, a2, a3, a4 = st.columns(4)
+a1.metric("Puissance", f"{puissance_active_w:.1f} W")
+a2.metric("Énergie", f"{energie_active_wh/1000:.2f} kWh")
+a3.metric("Équivalent carbone", f"{co2_active_kg:.2f} kg CO2e")
+a4.metric("Prix", f"{cout_active:.2f} €")
 
 st.markdown("---")
 
-# --- 3. CONSOMMATION À VIDE (IDLE) ---
+# --- 3. CONSOMMATION À VIDE / IDLE (4 COLONNES) ---
 puissance_idle_w = calculer_conso_a_vide(cpu_choice, ram_choice, stockage_choice, type_stockage_choice)
-energie_idle_wh, co2_idle_kg = calculer_projection(puissance_idle_w, duree_projection)
+energie_idle_wh, co2_idle_kg, cout_idle = calculer_projection(puissance_idle_w, duree_projection)
 
 st.subheader(f"Analyse de la consommation à vide sur : {duree_projection}")
-cv1, cv2, cv3 = st.columns(3)
-cv1.metric("Puissance Idle", f"{puissance_idle_w:.1f} W")
-cv2.metric("Énergie Gaspillée", f"{energie_idle_wh/1000:.2f} kWh")
-cv3.metric("Impact Passif", f"{co2_idle_kg:.3f} kg CO2e")
+v1, v2, v3, v4 = st.columns(4)
+v1.metric("Puissance", f"{puissance_idle_w:.1f} W")
+v2.metric("Énergie", f"{energie_idle_wh/1000:.2f} kWh")
+v3.metric("Équivalent carbone", f"{co2_idle_kg:.3f} kg CO2e")
+v4.metric("Prix", f"{cout_idle:.2f} €")
+
+st.info(f"Note : Coût calculé sur un tarif de 0.20€ / kWh.")
