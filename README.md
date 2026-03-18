@@ -38,6 +38,6 @@ Commande : pip install streamlit pandas psutil codecarbon
 🚀 Lancement de l'application
 Pour démarrer le simulateur, exécutez la commande suivante à la racine du dossier :
 
-Commande : streamlit run app.py
+Commande : ```streamlit run app.py```
 
 L'application s'ouvrira automatiquement dans votre navigateur par défaut (généralement à l'adresse http://localhost:8501).
