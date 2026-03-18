@@ -1,5 +1,5 @@
 # Hackaton
-ATLAS - Indicateur d'Impact Énergétique
+Indicateur d'Impact Énergétique
 
 Présentation du ProjetDans le cadre du 7ème Hackathon de l'entrepreneuriat de l'IUT de Béziers (2026) , notre groupe (filière Réseaux & Télécoms) a développé un outil de mesure d'impact environnemental pour le projet ATLAS du CFA EnSup-LR.
 
