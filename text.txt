@@ -28,7 +28,7 @@ source venv/bin/activate
 3. Installation des bibliothèques
 Une fois l'environnement activé, installez les dépendances nécessaires :
 
-Commande : pip install streamlit pandas psutil codecarbon
+Commande : ```pip install streamlit pandas psutil codecarbon```
 
     - streamlit : Pour l'interface web interactive.
     - pandas : Pour la manipulation des données et l'affichage des tableaux.
