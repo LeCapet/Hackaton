@@ -20,7 +20,7 @@ if 'flash_res' not in st.session_state:
 
 # --- SECTION : BARRE LATERALE (SIDEBAR) ---
 st.sidebar.header("Configuration Serveur")
-option_gpu = st.sidebar.selectbox("Puissance GPU", ("Standard (RTX 3060 - 12Go)", "Recommande (RTX 3080 - 24Go)", "Haute Performance (A100)"))
+option_gpu = st.sidebar.selectbox("Puissance GPU", ("Standard (RTX 3060 - 12Go)", "Recommandé (RTX 3080 - 24Go)", "Haute Performance (A100)"))
 cpu_choice = st.sidebar.select_slider("Nombre de coeurs CPU", options=[8, 16, 32], value=16)
 ram_choice = st.sidebar.radio("RAM", [32, 64], format_func=lambda x: f"{x} Go")
 type_stockage_choice = st.sidebar.radio("Stockage", ("SSD NVMe (Performant)", "Disque dur (evolutif)"))
