@@ -1,27 +1,139 @@
-# Hackaton
-Indicateur d'Impact Énergétique
+# Chat LM Studio (Streamlit)
 
-Présentation du ProjetDans le cadre du 7ème Hackathon de l'entrepreneuriat de l'IUT de Béziers (2026) , notre groupe (filière Réseaux & Télécoms) a développé un outil de mesure d'impact environnemental pour le projet ATLAS du CFA EnSup-LR.
+Application de chat basée sur **LM Studio** avec :
+- gestion multi-conversations
+- support de fichiers (PDF, CSV, Excel, DOCX, TXT)
+- suivi de consommation énergétique (CO₂ / Wh)
 
-L'objectif est de sensibiliser les apprentis et les formateurs sur le fait que chaque action numérique (évaluation de compétences, envoi de preuves) a un coût énergétique réel.
+---
 
-Concept TechniqueNotre solution décompose la consommation d'une requête IA en trois couches distinctes, comme identifié lors de notre phase de conception :
-Transport (Réseau) : Calcul modulable selon la taille du fichier et la technologie d'accès (WiFi, 4G, Fibre).
-Consommation PC Perso : Mesure réelle de l'activité CPU/RAM lors de l'upload et du traitement local via la bibliothèque CodeCarbon.
-Inférence IA & Stockage : Estimation de l'énergie consommée par les serveurs de l'IA (Claude) pour l'analyse des compétences et le stockage à long terme des documents (PDF, vidéos, photos).
-Installation Prérequis Python 3.13+ 
-Un environnement virtuel configuré (.venv)
+## Fonctionnalités
 
-Installation des dépendancesBash# Activation de l'environnement (Linux)
-source .venv/bin/activate
+- Multi-chat (sessions indépendantes)
+- Upload et analyse de fichiers
+- Historique de conversation
+- Paramétrage des tokens
+- Tracking des émissions carbone (CodeCarbon)
 
-# Installation de CodeCarbon et des utilitaires
-pip install codecarbon os math
-UtilisationLe script interactif demande le chemin d'un document (preuve de compétence) et la technologie réseau utilisée pour simuler une requête ATLAS.Bashpython main.py
+---
 
-Affichage du bilan en Wh et en gCO2e.
-Formules de CalculÉnergie Réseau : 
-Énergie IA : 
+## Structure du projet
+```
+project/
+│
+├── main.py         # Point d'entrée principal
+├── config.py       # Configuration (API, constantes)
+├── api.py          # Appels à LM Studio
+├── utils.py        # Fonctions utilitaires
+├── file_reader.py  # Lecture des fichiers
+├── ui.py           # Interface Streamlit (sidebar, session)
+└── tracker.py      # Tracking carbone
+```
 
-ÉquipeÉtudiants - IUT de Béziers.
-Sujet proposé par : Maeva Gisdal (CFA EnSup-LR).
+---
+
+## Installation
+
+### 1. Cloner le projet
+```bash
+git clone <repo_url>
+cd project
+```
+
+### 2. Installer les dépendances
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Exemple de `requirements.txt`
+```
+streamlit
+requests
+pandas
+python-docx
+PyPDF2
+codecarbon
+openpyxl
+```
+
+---
+
+## Configuration
+
+Modifier `config.py` :
+```python
+BASE_URL = "http://localhost:1234/v1"
+API_KEY = "your-api-key"
+```
+
+> Assure-toi que LM Studio est lancé avec l'API activée.
+
+---
+
+## Lancer l'application
+```bash
+streamlit run main.py
+```
+
+---
+
+## Formats de fichiers supportés
+
+- CSV
+- Excel (.xlsx)
+- PDF
+- Word (.docx)
+- TXT
+
+---
+
+## Tracking énergétique
+
+Le projet utilise **CodeCarbon** pour estimer :
+- émissions de CO₂
+- consommation énergétique (Wh)
+
+Formule utilisée :
+```
+Wh = (CO₂ / 0.4) * 1000
+```
+
+Les résultats sont affichés dans la sidebar.
+
+---
+
+## Fonctionnement
+
+1. L'utilisateur pose une question
+2. Les fichiers (si présents) sont injectés dans le prompt
+3. Requête envoyée à LM Studio
+4. Réponse affichée
+5. Émissions carbone mesurées
+
+---
+
+## Améliorations possibles
+
+- Streaming des réponses (type ChatGPT)
+- Sauvegarde des chats (JSON / DB)
+- Support multi-modèles
+- Gestion sécurisée des clés API
+- Dashboard énergétique avancé
+
+---
+
+## Limitations
+
+- Dépend de LM Studio local
+- Lecture PDF basique (pas d'OCR)
+- Pas de persistance des données
+
+---
+
+## Licence
+
+Projet libre d'utilisation — à adapter selon ton besoin.
+
+---
+
+Projet généré et optimisé pour la clarté et la modularité.
